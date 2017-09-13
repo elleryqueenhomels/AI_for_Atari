@@ -68,7 +68,7 @@ def huber_loss(y_true, y_pred):
 
 
 def process_image(img):
-    rgb = imresize(img, size=(IMAGE_HEIGHT, IMAGE_WIDTH), interp='nearest')
+    rgb = imresize(img, size=(IMAGE_HEIGHT, IMAGE_WIDTH), interp='bilinear')
 
     r, g, b = rgb[:,:,0], rgb[:,:,1], rgb[:,:,2]
     gray = 0.2989 * r + 0.5870 * g + 0.1140 * b # the effective luminance of a pixel
@@ -256,7 +256,7 @@ class Environment:
 
             observation, reward, done, info = self.env.step(action)
             next_state = self.update_state(state, observation)
-            
+
             # reward = np.clip(reward, MIN_REWARD, MAX_REWARD)
             reward /= 25.0 # Used in game: SpaceInvaders-v0
 
@@ -286,7 +286,7 @@ if __name__ == '__main__':
             for n in range(TRAIN_EPISODES):
                 total_reward = env.train_one_episode(agent)
                 total_rewards[n] = total_reward
-                print('episode: %d, current reward: %.2f, last 100 episodes avg reward: %.3f' % (n, total_reward, total_rewards[max(0, n-99):(n+1)].mean()))
+                print('episode: %d, current reward: %.2f, last 100 episodes avg reward: %.3f, total steps: %d' % (n, total_reward, total_rewards[max(0, n-99):(n+1)].mean(), agent.steps))
 
             training_time = datetime.now() - t0
 
