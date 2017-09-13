@@ -1,4 +1,4 @@
-# AI_for_Atari
+# AI for Atari
 
 Deep Reinforcement Learning Algorithms for solving Atari 2600 Games
 
@@ -13,10 +13,10 @@ The implementation of Asynchronous Advantage Actor-Critic (A3C) algorithm is bas
 
 
 ## Environment
-- <b>Python</b>  2.7.x or 3.6.x
-- <b>NumPy</b>  1.13.1
-- <b>TensorFlow</b>  1.0.* or 1.1.* or 1.2.* or 1.3.*
-- <b>Keras</b>  2.0.8
-- <b>SciPy</b>  0.19.1  (For image pre-processing)
-- <b>H5py</b>  2.7.1  (For saving or loading Keras model)
-- <b>Gym</b>  0.9.3  (Provides Atari 2600 Games)
+- <b>Python</b> 2.7.x or 3.6.x
+- <b>NumPy</b> 1.13.1
+- <b>TensorFlow</b> 1.0.* or 1.1.* or 1.2.* or 1.3.*
+- <b>Keras</b> 2.0.8
+- <b>SciPy</b> 0.19.1 (For image pre-processing)
+- <b>H5py</b> 2.7.1 (For saving or loading Keras model)
+- <b>Gym</b> 0.9.3 (Provides Atari 2600 Games)
