@@ -259,7 +259,9 @@ class Environment(threading.Thread):
             a = self.agent.select_action(s)
             obs, r, done, info = self.env.step(a)
             s2 = self.update_state(s, obs)
-            r /= 20.0 # Used in Game: SpaceInvaders-v0
+
+            # r = np.clip(r, -1.0, 1.0)
+            r /= 25.0 # Used in Game: SpaceInvaders-v0
 
             # terminal state
             if done:
@@ -286,7 +288,9 @@ class Environment(threading.Thread):
             a = self.agent.select_action(s)
             obs, r, done, info = self.env.step(a)
             s2 = self.update_state(s, obs)
-            r /= 20.0 # Used in Game: SpaceInvaders-v0
+
+            # r = np.clip(r, -1.0, 1.0)
+            r /= 25.0 # Used in Game: SpaceInvaders-v0
 
             s = s2
             total_reward += r
