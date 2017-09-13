@@ -20,7 +20,7 @@ from replay_memory import PrioritizedReplayMemory
 
 
 # ------------------ Constants ------------------
-GAME = 'Seaquest-v0'
+GAME = 'SpaceInvaders-v0'
 
 BRAIN_FILE  = 'DDQN_PER_' + GAME[:-3] + '.h5'
 TRAIN_BRAIN = True
@@ -145,7 +145,7 @@ class Brain:
         y = outputs
         y[batch_range, actions] = targets
 
-        self.model.fit(x, y, batch_size=BATCH_SZ, epochs=epochs, verbose=verbose)
+        self.model.fit(x, y, batch_size=None, epochs=epochs, verbose=verbose)
 
         return td_errors
 
@@ -232,7 +232,9 @@ class Environment:
 
             observation, reward, done, info = self.env.step(action)
             next_state = self.update_state(state, observation)
-            reward = np.clip(reward, MIN_REWARD, MAX_REWARD)
+
+            # reward = np.clip(reward, MIN_REWARD, MAX_REWARD)
+            reward /= 25.0 # Used in game: SpaceInvaders-v0
 
             agent.train(state, action, reward, next_state, done)
 
@@ -254,7 +256,9 @@ class Environment:
 
             observation, reward, done, info = self.env.step(action)
             next_state = self.update_state(state, observation)
-            reward = np.clip(reward, MIN_REWARD, MAX_REWARD)
+            
+            # reward = np.clip(reward, MIN_REWARD, MAX_REWARD)
+            reward /= 25.0 # Used in game: SpaceInvaders-v0
 
             state = next_state
             total_reward += reward
@@ -272,20 +276,27 @@ if __name__ == '__main__':
     agent = Agent(num_state, num_action)
 
     if TRAIN_BRAIN:
+        from datetime import datetime
+
         try:
             total_rewards = np.zeros(TRAIN_EPISODES)
+
+            t0 = datetime.now()
 
             for n in range(TRAIN_EPISODES):
                 total_reward = env.train_one_episode(agent)
                 total_rewards[n] = total_reward
+                print('episode: %d, current reward: %.2f, last 100 episodes avg reward: %.3f' % (n, total_reward, total_rewards[max(0, n-99):(n+1)].mean()))
 
-                if n % 10 == 0:
-                    print('episode: %d, current reward: %s, last 100 episodes avg reward: %s' % (n, total_reward, total_rewards[max(0, n-99):(n+1)].mean()))
+            training_time = datetime.now() - t0
 
-            print('avg reward for last 100 episodes: %s' % total_rewards[-100:].mean())
+            print('\nAvg reward for last 100 episodes: %s' % total_rewards[-100:].mean())
+            print('Total training time:', training_time, 'Total steps:', agent.steps, '\n')
+
         finally:
             agent.save_brain(BRAIN_FILE)
             print('Agent saves brain successfully! <brain_file: %s>' % BRAIN_FILE)
+
     else:
         from os.path import isfile
         
@@ -296,10 +307,13 @@ if __name__ == '__main__':
             print('Brain file <%s> not found...' % BRAIN_FILE)
 
     # test agent with trained brain
+    episode = 0
     agent.epsilon = 0.0
+
     while True:
+        episode += 1
         total_reward = env.test_one_episode(agent)
-        print('Reward:', total_reward)
+        print('Episode: %d, Reward: %s' % (episode, total_reward))
 
         input_str = input('Play again? [Y/N]')
         if input_str in ('n', 'N'):
