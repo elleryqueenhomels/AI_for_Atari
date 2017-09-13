@@ -101,6 +101,7 @@ class Brain:
 
         # optim = RMSprop(lr=LEARNING_RATE)
         optim = TFOptimizer(tf.train.RMSPropOptimizer(LEARNING_RATE, momentum=MOMENTUM))
+        
         model.compile(loss=huber_loss, optimizer=optim)
 
         return model
