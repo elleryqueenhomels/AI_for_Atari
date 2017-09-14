@@ -25,7 +25,7 @@ GAME = 'SpaceInvaders-v0'
 BRAIN_FILE  = 'DDQN_PER_' + GAME[:-3] + '.h5'
 TRAIN_BRAIN = True
 
-TRAIN_EPISODES = 800
+TRAIN_EPISODES = 2000
 
 IMAGE_WIDTH  = 84
 IMAGE_HEIGHT = 84
@@ -292,24 +292,24 @@ if __name__ == '__main__':
             training_time = datetime.now() - t0
 
             print('\nAvg reward for last 100 episodes: %s' % total_rewards[-100:].mean())
-            print('Total training time:', training_time, 'Total steps:', agent.steps, '\n')
+            print('Total training time:', training_time, 'Total steps:', agent.steps)
 
         finally:
             agent.save_brain(BRAIN_FILE)
-            print('Agent saves brain successfully! <brain_file: %s>' % BRAIN_FILE)
+            print('\nAgent saves brain successfully! <brain_file: %s>\n' % BRAIN_FILE)
 
     else:
         from os.path import isfile
         
         if isfile(BRAIN_FILE):
             agent.load_brain(BRAIN_FILE)
-            print('Agent loads brain successfully! ...')
+            print('\nAgent loads brain successfully! ...\n')
         else:
-            print('Brain file <%s> not found...' % BRAIN_FILE)
+            print('\nBrain file <%s> not found...\n' % BRAIN_FILE)
 
     # test agent with trained brain
     episode = 0
-    agent.epsilon = 0.0
+    agent.epsilon = 0.1
 
     while True:
         episode += 1
