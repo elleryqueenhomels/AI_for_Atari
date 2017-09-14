@@ -4,6 +4,7 @@ Deep Reinforcement Learning Algorithms for solving Atari 2600 Games
 
 ## Reference
 The implementation of Double DQN with Prioritized Experience Replay (Proportional Prioritization) is based on:
+- Mnih et al. [Human-level Control through Deep Reinforcement Learning](https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf) [2015.02]
 - van Hasselt et al. [Deep Reinforcement Learning with Double Q-learning](https://arxiv.org/pdf/1509.06461.pdf) [2015.12]
 - Schaul et al. [Prioritized Experience Replay](https://arxiv.org/pdf/1511.05952.pdf) [2016.02]
 
