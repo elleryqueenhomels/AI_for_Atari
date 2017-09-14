@@ -25,11 +25,14 @@ GAME = 'SpaceInvaders-v0'
 BRAIN_FILE  = 'DDQN_PER_' + GAME[:-3] + '.h5'
 TRAIN_BRAIN = True
 
-TRAIN_EPISODES = 2000
+TOTAL_TRAINING_STEPS = 50000000
 
 IMAGE_STACK  = 4
 IMAGE_WIDTH  = 84
 IMAGE_HEIGHT = 84
+
+ACTION_REPEATS = IMAGE_STACK
+UPDATE_TARGET_FREQUENCY = 10000
 
 HUBER_LOSS_DELTA = 1.0
 
@@ -38,12 +41,10 @@ MOMENTUM      = 0.95
 BATCH_SZ      = 32
 GAMMA         = 0.99
 
-ACTION_REPEATS = IMAGE_STACK
-UPDATE_TARGET_FREQUENCY = 10000
-
-MEMORY_CAPACITY = 1000000
-MEMORY_ALPHA    = 0.6
-MEMORY_EPS      = 0.01
+MEMORY_START_SIZE = 50000
+MEMORY_CAPACITY   = 1000000
+MEMORY_ALPHA      = 0.6
+MEMORY_EPS        = 0.01
 
 MAX_EPSILON = 1.0
 MIN_EPSILON = 0.1
@@ -169,7 +170,7 @@ class Agent:
         self.memory = PrioritizedReplayMemory(MEMORY_CAPACITY, alpha=MEMORY_ALPHA, eps=MEMORY_EPS)
 
         self.steps = 0
-        self.target_update_steps = 0
+        self.training_steps = 0
         self.epsilon = MAX_EPSILON
 
     def select_action(self, state):
@@ -178,25 +179,30 @@ class Agent:
         else:
             return np.argmax(self.brain.predict_one(state))
 
-    def train(self, state, action, reward, next_state, done):
+    def record_experience(self, state, action, reward, next_state, done):
         event = (state, action, reward, next_state, done)
         td_error = self.brain.get_td_error(state, action, reward, next_state, done)
         self.memory.push(event, td_error)
 
-        if self.steps % UPDATE_TARGET_FREQUENCY == 0:
-            self.brain.update_target_model()
+    def observe(self, state, action, reward, next_state, done):
+        self.record_experience(state, action, reward, next_state, done)
 
         # slowly decrease epsilon based on experience
         self.steps += 1
         self.epsilon = max(MIN_EPSILON, MAX_EPSILON + EPSILON_DECAY * self.steps)
 
-        # train the brain if the memory has enough experience
-        if self.memory.current_length() > BATCH_SZ:
-            samples, indices, priorities = self.memory.sample(BATCH_SZ)
-            states, actions, rewards, next_states, dones = samples
+    def train(self):
+        if self.training_steps % UPDATE_TARGET_FREQUENCY == 0:
+            self.brain.update_target_model()
 
-            td_errors = self.brain.train(states, actions, rewards, next_states, dones)
-            self.memory.update(indices, td_errors)
+        self.training_steps += 1
+
+        # train the brain with prioritized experience replay
+        samples, indices, priorities = self.memory.sample(BATCH_SZ)
+        states, actions, rewards, next_states, dones = samples
+
+        td_errors = self.brain.train(states, actions, rewards, next_states, dones)
+        self.memory.update(indices, td_errors)
 
     def save_brain(self, path):
         self.brain.save(path)
@@ -219,7 +225,8 @@ class Environment:
 
         images = [image]
         while len(images) < IMAGE_STACK:
-            observation = self.env.step(self.env.action_space.sample())
+            action = self.env.action_space.sample()
+            observation, reward, done, info = self.env.step(action)
             image = process_image(observation)
             images.append(image)
 
@@ -231,6 +238,23 @@ class Environment:
         image = np.expand_dims(image, axis=0)
         next_state = np.append(state[1:], image, axis=0)
         return next_state
+
+    def prefill_memory(self, agent, prefill_size):
+        while agent.memory.current_length() < prefill_size:
+            state = self.initial_state()
+
+            done = False
+            while not done:
+                action = self.env.action_space.sample()
+                observation, reward, done, info = self.env.step(action)
+                next_state = self.update_state(state, observation)
+                reward = np.clip(reward, MIN_REWARD, MAX_REWARD)
+
+                agent.record_experience(state, action, reward, next_state, done)
+
+                state = next_state
+                if agent.memory.current_length() >= prefill_size:
+                    break
 
     def train_one_episode(self, agent):
         state = self.initial_state()
@@ -250,12 +274,12 @@ class Environment:
 
             observation, reward, done, info = self.env.step(action)
             next_state = self.update_state(state, observation)
-
             reward = np.clip(reward, MIN_REWARD, MAX_REWARD)
-            # reward /= 25.0 # Used in game: SpaceInvaders-v0
+
+            agent.observe(state, action, reward, next_state, done)
 
             if num_repeats % ACTION_REPEATS == 0:
-                agent.train(state, action, reward, next_state, done)
+                agent.train()
 
             num_repeats += 1
             state = next_state
@@ -268,6 +292,7 @@ class Environment:
 
         done = False
         total_reward = 0
+
         while not done:
             if render:
                 self.env.render()
@@ -276,9 +301,7 @@ class Environment:
 
             observation, reward, done, info = self.env.step(action)
             next_state = self.update_state(state, observation)
-
             reward = np.clip(reward, MIN_REWARD, MAX_REWARD)
-            # reward /= 25.0 # Used in game: SpaceInvaders-v0
 
             state = next_state
             total_reward += reward
@@ -299,19 +322,29 @@ if __name__ == '__main__':
         from datetime import datetime
 
         try:
-            total_rewards = np.zeros(TRAIN_EPISODES)
+            env.prefill_memory(agent, MEMORY_START_SIZE)
+            print("\nPrefill agent's memory with %d experience under uniform random policy. Now begin to train...\n" % MEMORY_START_SIZE)
 
             t0 = datetime.now()
 
-            for n in range(TRAIN_EPISODES):
+            idx = 0
+            episode = 1
+            total_rewards = np.zeros(100)
+
+            while agent.training_steps < TOTAL_TRAINING_STEPS:
+                episode += 1
                 total_reward = env.train_one_episode(agent)
-                total_rewards[n] = total_reward
-                print('episode: %d, current reward: %.2f, last 100 episodes avg reward: %.3f, total steps: %d' % (n, total_reward, total_rewards[max(0, n-99):(n+1)].mean(), agent.steps))
+
+                total_rewards[idx] = total_reward
+                idx = (idx + 1) if idx < 99 else 0
+
+                print('episode: %d, current reward: %.2f, last 100 episodes avg reward: %.3f, training steps: %d, total steps: %d' % 
+                    (episode, total_reward, total_rewards[max(0, idx-99):(idx+1)].mean(), agent.training_steps, agent.steps))
 
             training_time = datetime.now() - t0
 
-            print('\nAvg reward for last 100 episodes: %s' % total_rewards[-100:].mean())
-            print('Total training time:', training_time, 'Total steps:', agent.steps)
+            print('\nAvg reward for last 100 episodes: %s' % total_rewards.mean())
+            print('Total training time:', training_time, 'Total training steps:', agent.training_steps, 'Total steps:', agent.steps)
 
         finally:
             agent.save_brain(BRAIN_FILE)
