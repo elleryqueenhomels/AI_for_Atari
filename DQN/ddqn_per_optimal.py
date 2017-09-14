@@ -328,7 +328,7 @@ if __name__ == '__main__':
             t0 = datetime.now()
 
             idx = 0
-            episode = 1
+            episode = 0
             total_rewards = np.zeros(100)
 
             while agent.training_steps < TOTAL_TRAINING_STEPS:
