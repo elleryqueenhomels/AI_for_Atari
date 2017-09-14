@@ -4,7 +4,6 @@
 
 from __future__ import print_function
 from __future__ import division
-from builtins import input
 
 import gym
 import numpy as np
@@ -322,8 +321,11 @@ if __name__ == '__main__':
         from datetime import datetime
 
         try:
+            t0 = datetime.now()
+            
             env.prefill_memory(agent, MEMORY_START_SIZE)
-            print("\nPrefill agent's memory with %d experience under uniform random policy. Now begin to train...\n" % MEMORY_START_SIZE)
+            print("\nPrefill agent's memory with %d experience under uniform random policy." % MEMORY_START_SIZE)
+            print('Elapsed time:', (datetime.now() - t0), 'Now begin to train...\n')
 
             t0 = datetime.now()
 
@@ -338,8 +340,10 @@ if __name__ == '__main__':
                 total_rewards[idx] = total_reward
                 idx = (idx + 1) if idx < 99 else 0
 
+                avg_reward = total_rewards.mean() if episode > 99 else total_rewards[:idx].mean()
+
                 print('episode: %d, current reward: %.2f, last 100 episodes avg reward: %.3f, training steps: %d, total steps: %d' % 
-                    (episode, total_reward, total_rewards[max(0, idx-99):(idx+1)].mean(), agent.training_steps, agent.steps))
+                    (episode, total_reward, avg_reward, agent.training_steps, agent.steps))
 
             training_time = datetime.now() - t0
 
@@ -348,7 +352,8 @@ if __name__ == '__main__':
 
         finally:
             agent.save_brain(BRAIN_FILE)
-            print('\nAgent saves brain successfully! <brain_file: %s>\n' % BRAIN_FILE)
+            print('\nAgent saves brain successfully! <brain_file: %s>' % BRAIN_FILE)
+            print('\nElapsed time:', (datetime.now() - t0), '\n')
 
     else:
         from os.path import isfile
