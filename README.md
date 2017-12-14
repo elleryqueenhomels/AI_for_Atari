@@ -1,6 +1,8 @@
 # AI for Atari
 
-Deep Reinforcement Learning Algorithms for solving Atari 2600 Games
+Using two Deep Reinforcement Learning Algorithms to solve Atari 2600 Games respectively.
+First: implements a Double DQN with Prioritized Experience Replay (Proportional Prioritization).
+Second: implements Asynchronous Advantage Actor-Critic (A3C) algorithm.
 
 ## Reference
 The implementation of Double DQN with Prioritized Experience Replay (Proportional Prioritization) is based on:
