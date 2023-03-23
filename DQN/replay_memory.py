@@ -4,7 +4,6 @@ import random
 import numpy as np
 from sum_tree import SumTree
 
-
 # Uniform Experience Replay Memory
 class ExperienceReplayMemory:
 
@@ -23,7 +22,6 @@ class ExperienceReplayMemory:
     def sample(self, batch_sz):
         samples = random.sample(self.memory, batch_sz)
         return map(np.array, zip(*samples))
-
 
 # Proportional Prioritized Experience Replay Memory
 class PrioritizedReplayMemory:
@@ -74,4 +72,3 @@ class PrioritizedReplayMemory:
         else:
             priority = self._get_priority(td_error)
             self.tree.update(idx, priority)
-

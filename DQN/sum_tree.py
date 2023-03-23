@@ -3,7 +3,6 @@
 
 import numpy as np
 
-
 class SumTree:
 
     def __init__(self, capacity):
@@ -66,4 +65,3 @@ class SumTree:
 
         # returns tuple: (tree_idx, priority, data)
         return (idx, self.tree[idx], self.data[data_idx])
-

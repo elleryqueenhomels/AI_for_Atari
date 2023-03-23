@@ -100,7 +100,7 @@ class Brain:
         model.add(Dense(units=self.num_action, activation=None))
 
         # optim = RMSprop(lr=LEARNING_RATE)
-        optim = TFOptimizer(tf.train.RMSPropOptimizer(LEARNING_RATE, momentum=MOMENTUM))
+        optim = TFOptimizer(tf.compat.v1.train.RMSPropOptimizer(LEARNING_RATE, momentum=MOMENTUM))
         
         model.compile(loss=huber_loss, optimizer=optim)
 

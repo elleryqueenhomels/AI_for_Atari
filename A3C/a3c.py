@@ -69,19 +69,19 @@ class Brain:
         input_shape = (None, num_state[0], num_state[1], num_state[2])
 
         # placeholders
-        self.states  = tf.placeholder(tf.float32, shape=input_shape, name='states' )
-        self.actions = tf.placeholder(tf.int32,   shape=(None, )   , name='actions')
-        self.returns = tf.placeholder(tf.float32, shape=(None, )   , name='returns') # discounted n-step return
+        self.states  = tf.compat.v1.placeholder(tf.float32, shape=input_shape, name='states' )
+        self.actions = tf.compat.v1.placeholder(tf.int32,   shape=(None, )   , name='actions')
+        self.returns = tf.compat.v1.placeholder(tf.float32, shape=(None, )   , name='returns') # discounted n-step return
 
         # build the graph
         Z = tf.transpose(self.states, [0, 2, 3, 1])
-        Z = tf.contrib.layers.conv2d(Z, 16, (8, 8), stride=4, activation_fn=tf.nn.relu)
-        Z = tf.contrib.layers.conv2d(Z, 32, (4, 4), stride=2, activation_fn=tf.nn.relu)
-        Z = tf.contrib.layers.flatten(Z)
-        Z = tf.contrib.layers.fully_connected(Z, 256, activation_fn=tf.nn.relu)
+        Z = tf.compat.v1.layers.conv2d(Z, 16, (8, 8), stride=4, activation_fn=tf.nn.relu)
+        Z = tf.compat.v1.layers.conv2d(Z, 32, (4, 4), stride=2, activation_fn=tf.nn.relu)
+        Z = tf.compat.v1.layers.flatten(Z)
+        Z = tf.compat.v1.layers.fully_connected(Z, 256, activation_fn=tf.nn.relu)
 
-        out_policy = tf.contrib.layers.fully_connected(Z, num_actions, activation_fn=tf.nn.softmax)
-        value      = tf.contrib.layers.fully_connected(Z, 1, activation_fn=lambda x: x)
+        out_policy = tf.compat.v1.layers.fully_connected(Z, num_actions, activation_fn=tf.nn.softmax)
+        value      = tf.compat.v1.layers.fully_connected(Z, 1, activation_fn=lambda x: x)
         out_value  = tf.reshape(value, [-1])
 
         self.predict_p = out_policy
@@ -89,7 +89,7 @@ class Brain:
 
         # calculate the loss
         selected_action_prob = tf.reduce_sum(out_policy * tf.one_hot(self.actions, num_actions), axis=1)
-        log_prob = tf.log(selected_action_prob + 1e-10)
+        log_prob = tf.compat.v1.log(selected_action_prob + 1e-10)
         advantage = self.returns - out_value
 
         loss_policy  = - log_prob * tf.stop_gradient(advantage) # maximize policy performance
@@ -98,14 +98,14 @@ class Brain:
 
         loss_total = tf.reduce_mean(loss_policy + loss_value + loss_entropy)
 
-        self.train_op = tf.train.RMSPropOptimizer(LEARNING_RATE, decay=DECAY).minimize(loss_total)
+        self.train_op = tf.compat.v1.train.RMSPropOptimizer(LEARNING_RATE, decay=DECAY).minimize(loss_total)
 
         # set the session and initialize variables
-        self.session = tf.Session()
-        self.session.run(tf.global_variables_initializer())
+        self.session = tf.compat.v1.Session()
+        self.session.run(tf.compat.v1.global_variables_initializer())
 
         # avoid modifications
-        self.default_graph = tf.get_default_graph()
+        self.default_graph = tf.compat.v1.get_default_graph()
         self.default_graph.finalize()
 
     def predict_policy(self, states):
